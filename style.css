@@ -1,0 +1,34 @@
+:root {
+  --test-color: orange;
+  --translation: 3;
+}
+
+div {
+  --test-color: rebeccapurple;
+  height: 200px;
+  padding: calc(var(--translation) * 1em);
+}
+
+.one {
+  background: var(--test-color);
+  border: 7px solid black;
+  height: auto;
+}
+.two {
+  --test-color: blue;
+  background: var(--test-color);
+  border: 7px solid violet;
+  height: auto;
+}
+
+.three {
+  --test-color: goldenrod;
+  background: var(--test-color);
+  border: 7px solid brown;
+}
+
+.four {
+  --test-color: var(--test-color, green);
+  background-color: var(--test-color);
+  border: 7px solid gold;
+}
