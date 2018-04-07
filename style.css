@@ -47,7 +47,3 @@ table {
 :root{
   --main-color: red;
 }
-
-#canv {
-  border: 1px solid black;
-}
