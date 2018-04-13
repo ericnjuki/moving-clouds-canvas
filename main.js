@@ -1,85 +1,146 @@
-function draw() {
+let cloudSettings = {
+  radius : 20,
+  maxAltitude : 60, // distance from the top, this is higher
+  minAltitude : 200, // this is lower
+  maxBaseWidth : 200,
+  minBaseWidth : 50,
+  maxDistBtnClouds : 200,
+  minDistBtnClouds : 10,
+  // pace : 0.04
+  // height
+}
+let clouds = [];
+let latestCloud;
+let worldHeight = window.innerHeight;
+let worldWidth = window.innerWidth;
+let x = 0;
+let y = 1;
+
+function start() {
   const canvas2DSupported = !!window.CanvasRenderingContext2D;
   if(canvas2DSupported) {
-    let canvas = document.getElementById('canv');
-    let bgCanv = document.getElementById('bg');
+    let canvasClouds = document.getElementById('canvas-clouds');
+    let canvasBg = document.getElementById('canvas-bg');
 
-    var worldHeight = window.innerHeight;
-    var worldWidth = window.innerWidth;
-    bgCanv.width = canvas.width = worldWidth;
-    bgCanv.height = canvas.height = worldHeight;
-    let ctx = canvas.getContext('2d');
-    let bgCtx = bgCanv.getContext('2d');
+    canvasBg.width = canvasClouds.width = worldWidth;
+    canvasBg.height = canvasClouds.height = worldHeight;
+    let cloudsCtx = canvasClouds.getContext('2d');
+    let bgCtx = canvasBg.getContext('2d');
 
-    var linearGradient = ctx.createLinearGradient(worldWidth/2, 0, worldWidth/2, worldHeight);
-    linearGradient.addColorStop(0.8, 'lightblue')
-    linearGradient.addColorStop(1, 'orange');
-    bgCtx.fillStyle = linearGradient;
+    let skylineGradient = bgCtx.createLinearGradient(worldWidth/2, 0, worldWidth/2, worldHeight);
+    skylineGradient.addColorStop(0.8, 'lightblue')
+    skylineGradient.addColorStop(1, 'orange');
+    bgCtx.fillStyle = skylineGradient;
     bgCtx.fillRect(0, 0, worldWidth, worldHeight);
 
-    var linearGradient2 = ctx.createLinearGradient(worldWidth/2, 0, worldWidth/2, worldHeight);
-    linearGradient2.addColorStop(0, 'white')
-    linearGradient2.addColorStop(0.4, 'grey');
-    ctx.fillStyle = linearGradient2;
-    // ctx.beginPath(); 
-    // ctx.moveTo(500, 300);   
-    // ctx.lineTo(100, 300);
-    // ctx.arcTo(100, 250, 150, 250, 50);
-    // ctx.arcTo(150, 200, 200, 200, 50);
-    // // ctx.arcTo(220, 180, 240, 200, 30);
-    // ctx.arc(250, 250, Math.sqrt(50*50 + 50*50), toRadians(240), toRadians(310));
-    // ctx.stroke();  
+    let cloudsGradient = cloudsCtx.createLinearGradient(worldWidth/2, 0, worldWidth/2, cloudSettings.minAltitude);
+    cloudsGradient.addColorStop(0, 'white')
+    cloudsGradient.addColorStop(0.4, 'rgb(255, 255, 255)');
+    cloudsCtx.fillStyle = cloudsGradient;
 
-    var x = 0;
-    var y = 1;
-    var radius = 20;
-    var baseStart = [1200, 100];
-    var baseEnd = [baseStart[x] - 200, baseStart[y]];
+    let firstCloud;
+    latestCloud = firstCloud = generateCloud(cloudSettings);
+    clouds.push(firstCloud);
 
-    // ctx.moveTo(baseStart[x], baseStart[y] - radius);   
-    // ctx.stroke();  
-    
-    function doThisOtherThing(offset) {
-      var internalBaseStart = baseStart.slice();
-      internalBaseStart[x] -= offset;
-      var internalBaseEnd = [internalBaseStart[x] - 200, internalBaseStart[y]];
-
-      ctx.clearRect(0, 0, worldWidth + 150, worldHeight);
-      ctx.beginPath(); 
-      ctx.arc(internalBaseStart[x], internalBaseStart[y] - radius, radius, toRadians(270), toRadians(90));
-      ctx.lineTo(internalBaseEnd[x], internalBaseEnd[y]);
-      ctx.arc(internalBaseEnd[x], internalBaseEnd[y] - radius, radius, toRadians(90), toRadians(270));
-      ctx.closePath();
-      ctx.fill();
-      
-    }
-    function doTheThing(offset) {  
-      ctx.clearRect(0, 0, worldWidth + 150, worldHeight);
-      ctx.fillStyle = 'black';
-      ctx.translate(-offset, 0);
-      ctx.fillRect(worldWidth, 10, 150, 150);
-    }
-    function toRadians(deg) {
-      return deg * 0.0174533;
-    }
-    function setIntervalX(callback, delay, reps) {
-      var z = 0;
-      var intervalID = window.setInterval(function () {
-         callback();
-         if (++z === reps) {
-             window.clearInterval(intervalID);
-         }
-      }, delay);
-    }
-    
-    var k = 0;
+    drawClouds(cloudsCtx);
     setInterval(
       () => {
-        doThisOtherThing(k);
-        k++;
+        moveClouds();
+        drawClouds(cloudsCtx);
       },
-      25
-    )
+      1
+    );
   }
 }
-window.requestAnimationFrame(draw);
+let cloudno = 0;
+function generateCloud(cloudSettings) {
+  // console.log('cloud no: ' + ++cloudno);
+  let baseWidth = rand(cloudSettings.minBaseWidth, cloudSettings.maxBaseWidth);
+  let tailDistance = rand(cloudSettings.minDistBtnClouds, cloudSettings.maxDistBtnClouds);
+  // distance required to initially draw cloud outside of viewport
+  let cloudOffset = Math.round(
+    baseWidth / cloudSettings.radius
+  ) * cloudSettings.radius + cloudSettings.radius; // round number to nearest radius and add radius..
+  let altitude = rand(cloudSettings.minAltitude, cloudSettings.maxAltitude);
+  let baseStart = [
+    worldWidth + cloudOffset,
+    altitude
+  ];
+  let baseEnd = [
+    baseStart[x] - baseWidth,
+    baseStart[y]
+  ];
+
+  let pace;
+  if (!cloudSettings.pace) {
+    pace = 0.26 - Math.ceil(
+      ((baseWidth - cloudSettings.minBaseWidth) / (cloudSettings.maxBaseWidth - cloudSettings.minBaseWidth)) * 25
+    ) * 0.01; // pace (which is btn 0.01 and 0.25 px/ms) is proportional to cloudBaseWidth
+    // pace = rand(0.01, 0.25);
+    console.log(pace);
+  } else {
+    pace = cloudSettings.pace;
+  }
+  // console.log('worldWidth: '+ worldWidth);
+  // console.log('baseStart: '+ baseStart);
+  // console.log('baseEnd: '+ baseEnd);
+  return { baseStart, baseEnd, baseWidth, tailDistance, pace };
+}
+
+function drawCloud(ctx, radius, cloud) {
+  ctx.beginPath(); 
+  ctx.arc(cloud.baseStart[x], cloud.baseStart[y] - radius, radius, toRadians(270), toRadians(90));
+  ctx.lineTo(cloud.baseEnd[x], cloud.baseEnd[y]);
+  ctx.arc(cloud.baseEnd[x], cloud.baseEnd[y] - radius, radius, toRadians(90), toRadians(270));
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
+function drawClouds(ctx) {
+  ctx.clearRect(0, 0, worldWidth + cloudSettings.minBaseWidth * 2, worldHeight);
+  for(let i=0; i < clouds.length; i++){
+    drawCloud(ctx, cloudSettings.radius, clouds[i]);
+  }
+}
+
+function moveCloud(cloud) {
+  cloud.baseStart[x] -= (cloud.pace * 25); // pace is px/25ms
+  cloud.baseEnd[x] = cloud.baseStart[x] - cloud.baseWidth;
+}
+function moveClouds() {
+  let purgeClouds = [];
+  let addNewCloud = false;
+  for(let i = 0; i < clouds.length; i++){
+    let currentCloud = clouds[i];
+    // move clouds
+    moveCloud(currentCloud);
+    // determine if one needs to be generated/removed
+    if(currentCloud.baseStart[x] + cloudSettings.radius <= 0){
+      purgeClouds.push(i);
+    }
+    if(latestCloud.tailDistance <= worldWidth - latestCloud.baseStart[x] + cloudSettings.radius){
+      latestCloud = generateCloud(cloudSettings);
+      addNewCloud = true;
+    }
+    // rm/generate new cloud if conditions match
+  }
+  for(let i = 0; i < purgeClouds.length; i++){
+    clouds.splice(purgeClouds[i], 1);
+  }
+  if(addNewCloud){
+    clouds.push(latestCloud);
+  }
+}
+// // biz rules
+// currentSettings = {
+//   totalCloudWidth
+// };
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
+function toRadians(deg) {
+  return deg * 0.0174533;
+}
+
+start();
+// window.addEventListener('resize' );

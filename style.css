@@ -47,11 +47,13 @@ table {
 :root{
   --main-color: red;
 }
-
-#bg {
+body{
+  overflow: hidden;
+}
+#canvas-bg {
   z-index: 0;
 }
-.canvas-cont {
+.canvas-container {
   position: absolute;
   top: 0;
   left: 0;
