@@ -6,7 +6,7 @@ View on [codepen](https://codepen.io/njuki/pen/KKZKKYL)
 ## Planning
 <pre>planning phase..</pre>
 <img width="48%" src="./images/blueprint1.jpg">
-<img width="48%" align="left" src="./images/blueprint2.jpg">
+<img width="48%" align="right" src="./images/blueprint2.jpg">
 
 <br>
 
